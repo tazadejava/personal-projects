@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#b53f4d</color>
+
+    <color name="colorHeaderItem">#6DA2FF</color>
+    <color name="colorHeaderItemSemesterTermSplit">#9abeff</color>
+    <color name="colorHeaderItemUnweighted">#6dccff</color>
+
+    <color name="colorPeriodOverheadTextMain">#808080</color>
+    <color name="colorPeriodOverheadTextSummer">#ce921a</color>
+
+    <color name="colorUpdatedAssignment">#ff6d9c</color>
+
+    <color name="colorServiceLogMainColor">#ff000000</color>
+    <color name="colorServiceLogOffColor">#444444</color>
+</resources>

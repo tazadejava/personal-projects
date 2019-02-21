@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp">
+
+    <TextView
+        android:id="@+id/subSpecificText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:text="11/6/17"/>
+
+    <TextView
+        android:id="@+id/specialNoteIndicator"
+        android:layout_alignParentRight="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:text="! X * *"/>
+
+    <TextView
+        android:id="@+id/gradeName"
+        android:paddingLeft="8dp"
+        android:layout_below="@id/subSpecificText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Commands in Class Practice Skit"/>
+
+    <TextView
+        android:id="@+id/letterGrade"
+        android:paddingLeft="8dp"
+        android:layout_below="@id/gradeName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="A (94.33%)"/>
+
+    <TextView
+        android:id="@+id/pointsEarned"
+        android:layout_below="@id/gradeName"
+        android:layout_alignParentRight="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="10 out of 10"/>
+
+</RelativeLayout>

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Background Service"
+        android:key="pref_service_settings">
+        <SwitchPreference
+            android:key="pref_enable_service"
+            android:title="Enable background service"
+            android:summary="Allow the app to periodically update grades in the background (only when the phone is locked)"
+            android:defaultValue="true"
+            />
+        <SwitchPreference
+            android:key="pref_enable_data_usage"
+            android:title="Enable background data usage"
+            android:summary="Allow the app to update grades in the background using cellular data"
+            android:defaultValue="false"
+            />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Notifications"
+        android:key="pref_notification_settings">
+        <SwitchPreference
+            android:key="pref_enable_all_notifications"
+            android:title="Allow notifications"
+            android:summary="Allow background notifications to be sent"
+            android:defaultValue="true"
+            />
+        <SwitchPreference
+            android:key="pref_enable_updated_grade_notifications"
+            android:title="Enable grade update notification"
+            android:summary="Notify when a teacher updates an assignment"
+            android:defaultValue="true"
+            />
+        <SwitchPreference
+            android:key="pref_enable_update_notifications"
+            android:title="Enable background update notification"
+            android:summary="Notify when a background update has been performed, regardless if a grade is updated (debug use)"
+            android:defaultValue="false"
+            />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Advanced"
+        android:key="pref_advanced_settings">
+        <Preference
+            android:key="pref_view_update_history"
+            android:title="View update history"
+            android:summary="View the app's update history">
+        </Preference>
+        <SwitchPreference
+            android:key="pref_enable_crash_log_toast"
+            android:title="Enable crash log toast"
+            android:summary="Notify when the app contains crash logs"
+            android:defaultValue="false" />
+        <Preference
+            android:key="pref_view_crash_logs"
+            android:title="View crash logs"
+            android:summary="View the app's crash logs">
+        </Preference>
+        <Preference
+            android:key="pref_send_feedback"
+            android:title="Send feedback"
+            android:summary="Send feedback or comments. Your help is greatly appreciated!" />
+        <Preference
+            android:key="pref_privacy_policy"
+            android:title="Privacy policy"
+            android:summary="View the app's privacy policy" />
+        <Preference
+            android:key="pref_log_out"
+            android:title="Log out"
+            android:summary="Log out of the current account, saving data" />
+    </PreferenceCategory>
+</PreferenceScreen>

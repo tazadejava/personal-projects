@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Standard Score</string>
+
+    <string name="service_description_manifest">Updates grades in the background periodically.</string>
+
+    <string name="term_list_dialog_choose_term">Choose term...</string>
+
+    <string name="period_list_toolbar_settings">Settings</string>
+    <string name="period_list_toolbar_clear_update_notifications">Clear all update notifications</string>
+    <string name="period_list_toolbar_view_schedule">View schedule</string>
+
+    <string name="grades_list_toolbar_hide_inactive_headers">Hide Inactive Headers</string>
+
+    <string name="schedule_toolbar_refresh">Refresh</string>
+</resources>

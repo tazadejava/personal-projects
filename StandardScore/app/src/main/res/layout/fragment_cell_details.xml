@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/activity_class_details"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false">
+
+    <TextView
+        android:id="@+id/cellName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/overheadTextLayout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="12dp"
+        android:text="Conjunctions Practice WS" />
+
+    <TextView
+        android:id="@+id/cellOutOf"
+        android:text="* out of 40"
+        android:layout_below="@id/cellName"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/cellSpecialNote"
+        android:text=""
+        android:layout_below="@id/cellOutOf"
+        android:layout_centerHorizontal="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/ifOutOfScore"
+        android:background="@android:color/holo_green_light"
+        android:layout_below="@+id/cellOutOf"
+        android:padding="48dp"
+        android:layout_marginTop="64dp"
+        android:layout_marginBottom="32dp"
+        android:textAlignment="center"
+        android:text="If I got 32 out of 40, \nmy term grade will be: A (91.55%)."
+        android:textSize="18sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/ifTermGrade"
+        android:background="@android:color/holo_orange_light"
+        android:padding="48dp"
+        android:layout_marginBottom="32dp"
+        android:layout_below="@id/ifOutOfScore"
+        android:textAlignment="center"
+        android:text="To get 90% for the term, \nI need to get on this assignment: 7 out of 10, A (91.55%)"
+        android:textSize="18sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+</RelativeLayout>
