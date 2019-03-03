@@ -31,6 +31,11 @@ Example screenshots of the app (sample account used):
 <img src="https://user-images.githubusercontent.com/47044879/53614351-8092a600-3b8e-11e9-9041-9edd4883ad28.png" width="270" height="480" />
 <img src="https://user-images.githubusercontent.com/47044879/53614352-8092a600-3b8e-11e9-8a0f-fcfb0b49e2c5.png" width="270" height="480" />
 
+## Development
+
+* The app is built with Google's Android platform. Consequently, most of the code is written in Java, with the UI formatting written in XML.
+* To scrape the user's grades from the school's grading website, Skyward, I used a WebView interface system (via me/tazadejava/gradeupdates/GradesManager.class and me/tazadejava/gradeupdates/ScraperInterface.class). Consequently, I used JavaScript to scrape and pass the data back to Java to be saved. The JavaScript code can be found in the assets folder within the project.
+
 ## Deployment
 
 The application is available for free on the Play Store. Otherwise, the source can be loaded on a gradle-supported IDE and built to run on any Android device with SDK 23 or higher.
