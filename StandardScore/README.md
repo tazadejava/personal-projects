@@ -1,12 +1,12 @@
 # Standard Score
 
-Play Store listing:
+Play Store listing info:
 
 ```
 Check school grades, get notified for updates, track your academic progression!
 ```
 
-Android application built for use in LWSD School District to automatically download, update, and notify for updated school grades during the school year.
+An Android application built for use in the LWSD School District to automatically download, update (either in the foreground or background via a Service), and automatically notify for updated school grades throughout the school year.
 
 Play Store listing description:
 
