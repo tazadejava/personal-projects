@@ -587,11 +587,19 @@ public class PeriodListActivity extends AppCompatActivity {
         builder.setView(dialog);
         final Dialog dialogItem = builder.create();
 
+        final ClassPeriod.GradeTerm[] terms = {ClassPeriod.GradeTerm.T1, ClassPeriod.GradeTerm.T2, ClassPeriod.GradeTerm.T3, ClassPeriod.GradeTerm.T4, ClassPeriod.GradeTerm.S1, ClassPeriod.GradeTerm.S2};
+        final ImageView[] refreshTermImageViews = {dialog.findViewById(R.id.refreshButtonTerm1), dialog.findViewById(R.id.refreshButtonTerm2), dialog.findViewById(R.id.refreshButtonTerm3), dialog.findViewById(R.id.refreshButtonTerm4), dialog.findViewById(R.id.refreshButtonSemester1), dialog.findViewById(R.id.refreshButtonSemester2)};
+
         ImageView refreshAll = dialog.findViewById(R.id.allRefreshButton);
         refreshAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 updateViews(getGradesManager().newestTerm);
+                for(ImageView refreshTermImage : refreshTermImageViews) {
+                    if(refreshTermImage.getVisibility() == View.VISIBLE) {
+                        refreshTermImage.animate().rotationBy(-360).setInterpolator(new DecelerateInterpolator()).setDuration(500);
+                    }
+                }
                 v.animate().rotationBy(-360).setInterpolator(new DecelerateInterpolator()).setDuration(500).withEndAction(new Runnable() {
                     @Override
                     public void run() {
@@ -602,8 +610,6 @@ public class PeriodListActivity extends AppCompatActivity {
             }
         });
 
-        final ClassPeriod.GradeTerm[] terms = {ClassPeriod.GradeTerm.T1, ClassPeriod.GradeTerm.T2, ClassPeriod.GradeTerm.T3, ClassPeriod.GradeTerm.T4, ClassPeriod.GradeTerm.S1, ClassPeriod.GradeTerm.S2};
-        final ImageView[] refreshTermImageViews = {dialog.findViewById(R.id.refreshButtonTerm1), dialog.findViewById(R.id.refreshButtonTerm2), dialog.findViewById(R.id.refreshButtonTerm3), dialog.findViewById(R.id.refreshButtonTerm4), dialog.findViewById(R.id.refreshButtonSemester1), dialog.findViewById(R.id.refreshButtonSemester2)};
         int ind = 0;
         for(ImageView refreshView : refreshTermImageViews) {
             if(ind >= 4) {
