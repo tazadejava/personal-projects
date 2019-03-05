@@ -110,6 +110,8 @@ public class GradesManager {
 
     public LinkedHashMap<DateTime, List<UpdateHistoryPoint>> updateHistory = new LinkedHashMap<>();
 
+    private DateTime currentUpdateNow;
+
     private HashMap<String, HashMap<ClassPeriod.GradeTerm, HashMap<String, PercentageDate>>> averageTermGrades;
     private AverageTermGradeHistoryManager averageTermGradeManager;
 
@@ -368,6 +370,7 @@ public class GradesManager {
         areGradesUpdating = true;
         lastUpdateReason = updateReason;
         lastUpdateTime = System.currentTimeMillis();
+        currentUpdateNow = DateTime.now();
 
         final LinkedList<ClassPeriod.GradeTerm> termsToUpdateQueue = new LinkedList<>();
 
@@ -740,11 +743,11 @@ public class GradesManager {
 
                 allClassPeriods.put(currentViewYear, getFormattedUpdatingClassPeriods());
 
-                if(((PeriodListActivity) lastContext).currentViewTerm == currentUpdateTerm) {
-                    ((PeriodListActivity) lastContext).updateViews(currentUpdateTerm);
+                PeriodListActivity context = (PeriodListActivity) lastContext;
+                if(context.currentViewTerm == currentUpdateTerm) {
+                    context.updateViews(currentUpdateTerm);
                 }
 
-                PeriodListActivity context = (PeriodListActivity) lastContext;
                 if(!PeriodListActivity.isRunning && context.currentViewTerm == currentUpdateTerm) {
                     ActivityManager.RunningAppProcessInfo process = new ActivityManager.RunningAppProcessInfo();
                     ActivityManager.getMyMemoryState(process);
@@ -853,7 +856,7 @@ public class GradesManager {
                 if(value.equals("0")) {
                     handler.postDelayed(run, 500);
                 } else {
-                    updateRowColumns(updateTerms);
+//                    updateRowColumns(updateTerms);
 
                     final Runnable secondRun = new Runnable() {
                         @Override
@@ -897,6 +900,8 @@ public class GradesManager {
                                 view.evaluateJavascript(scrapeGrades, new ValueCallback<String>() {
                                     @Override
                                     public void onReceiveValue(final String value) {
+                                        updateRowColumns(updateTerms);
+
                                         if (isGradeSearchComplete) {
                                             completeGradeSearch();
                                         } else {
@@ -1047,9 +1052,8 @@ public class GradesManager {
                         }
                     }
                 } else {
-                    DateTime now = DateTime.now();
-                    updateHistory.put(now, new ArrayList<UpdateHistoryPoint>());
-                    updateHistory.get(now).add(new UpdateHistoryPoint(NONEXISTENT_TERMS_PLACEHOLDER, updatedTerms.substring(0, updatedTerms.length() - 1), false, "0", "0"));
+                    updateHistory.put(currentUpdateNow, new ArrayList<UpdateHistoryPoint>());
+                    updateHistory.get(currentUpdateNow).add(new UpdateHistoryPoint(NONEXISTENT_TERMS_PLACEHOLDER, updatedTerms.substring(0, updatedTerms.length() - 1), false, "0", "0"));
                 }
             }
         } else {
@@ -1128,7 +1132,6 @@ public class GradesManager {
 
     private void compareUpdatedVersionWithOld(ClassPeriod.GradeTerm checkTerm) {
         Set<ClassPeriod.GradeTerm> changedTermGradeAverages = new HashSet<>();
-        DateTime now = DateTime.now();
         for(ClassPeriod newPeriod : updatedClassPeriods.get(checkTerm)) {
             if(!newPeriod.shouldUpdate()) {
                 continue;
@@ -1150,7 +1153,7 @@ public class GradesManager {
                                         foundAssignment = true;
                                         if (oldItem.getPercentageGrade() != newItem.getPercentageGrade() || (newItem.getPointsTotal().equals("0") && !newItem.getPointsReceived().equals(oldItem.getPointsReceived()))) {
                                             changedTermGradeAverages.add(newItem.getPeriod().getTerm());
-                                            appendUpdateHistory(now, (GradedItem) newItem);
+                                            appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
                                             newPeriod.incrementUpdate();
 
                                             if(newPeriod.getTerm().STR != 0) {
@@ -1164,7 +1167,7 @@ public class GradesManager {
 
                                 if (!foundAssignment) {
                                     changedTermGradeAverages.add(newItem.getPeriod().getTerm());
-                                    appendUpdateHistory(now, (GradedItem) newItem);
+                                    appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
                                     newPeriod.incrementUpdate();
                                     if(newPeriod.getTerm().STR != 0) {
                                         ((GradedItem) newItem).isTagged = true;
@@ -1182,7 +1185,7 @@ public class GradesManager {
                                     }
 
                                     if (!foundGradedAssignment) {
-                                        appendUpdateHistory(now, (GradedItem) newItem);
+                                        appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
                                     }
                                 }
                             }
@@ -1206,7 +1209,7 @@ public class GradesManager {
                     }
                     if (newItem instanceof GradedItem) {
                         changedTermGradeAverages.add(newItem.getPeriod().getTerm());
-                        appendUpdateHistory(now, (GradedItem) newItem);
+                        appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
                         newPeriod.incrementUpdate();
                         ((GradedItem) newItem).isTagged = true;
                         sendUpdateNotification((GradedItem) newItem, lastContext);
@@ -1228,7 +1231,9 @@ public class GradesManager {
             }
         }
 
-        updateHistory.put(now, new ArrayList<UpdateHistoryPoint>());
+        if(!updateHistory.containsKey(currentUpdateNow)) {
+            updateHistory.put(currentUpdateNow, new ArrayList<UpdateHistoryPoint>());
+        }
     }
 
     private void appendUpdateHistory(DateTime time, GradedItem newItem) {
