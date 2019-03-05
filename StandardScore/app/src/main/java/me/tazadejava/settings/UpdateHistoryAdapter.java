@@ -66,9 +66,17 @@ public class UpdateHistoryAdapter extends RecyclerView.Adapter<UpdateHistoryAdap
 
         List<UpdateHistoryPoint> points = updateHistory.get(updateDates.get(position));
 
+        boolean keepHistoryDetailsVisible = false;
+        if (getItemCount() > position + 1 && updateDates.get(position + 1).getDayOfMonth() != updateDates.get(position).getDayOfMonth()) {
+            keepHistoryDetailsVisible = true;
+            holder.historyDate.setPadding(0, 0, 0, 32);
+        } else {
+            holder.historyDate.setPadding(0, 0, 0, 0);
+        }
+
         if(points.isEmpty()) {
             holder.historyDetails.setText("");
-            holder.historyDetails.setVisibility(View.GONE);
+            holder.historyDetails.setVisibility(keepHistoryDetailsVisible ? View.VISIBLE : View.GONE);
         } else {
             holder.historyDetails.setVisibility(View.VISIBLE);
             SpannableStringBuilder details = new SpannableStringBuilder();
