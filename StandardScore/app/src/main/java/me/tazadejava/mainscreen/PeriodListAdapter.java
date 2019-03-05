@@ -31,10 +31,10 @@ public class PeriodListAdapter extends RecyclerView.Adapter<PeriodListAdapter.Vi
         public ViewHolder(View itemView) {
             super(itemView);
 
-            termGrade = (TextView) itemView.findViewById(R.id.termGrade);
-            semesterGrade = (TextView) itemView.findViewById(R.id.semesterLetterGrade);
-            className = (TextView) itemView.findViewById(R.id.className);
-            teacherName = (TextView) itemView.findViewById(R.id.teacherName);
+            termGrade = itemView.findViewById(R.id.termGrade);
+            semesterGrade = itemView.findViewById(R.id.semesterLetterGrade);
+            className = itemView.findViewById(R.id.className);
+            teacherName = itemView.findViewById(R.id.teacherName);
         }
     }
 
