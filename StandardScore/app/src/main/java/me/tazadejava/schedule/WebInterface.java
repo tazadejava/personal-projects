@@ -119,11 +119,6 @@ public class WebInterface {
                 newWeb.setWebViewClient(new WebViewClient() {
 
                     @Override
-                    public void onReceivedSslError (WebView view, SslErrorHandler handler, SslError error) {
-                        handler.proceed();
-                    }
-
-                    @Override
                     public void onPageFinished(final WebView view, String url) {
                         super.onPageFinished(view, url);
 
@@ -191,11 +186,6 @@ public class WebInterface {
         web.setWebViewClient(new WebViewClient() {
 
             @Override
-            public void onReceivedSslError (WebView view, SslErrorHandler handler, SslError error) {
-                handler.proceed();
-            }
-
-            @Override
             public void onPageFinished(final WebView view, String url) {
                 super.onPageFinished(view, url);
 
@@ -215,8 +205,8 @@ public class WebInterface {
                         waitingForNewPageTimeout = 1;
                         view.evaluateJavascript("javascript:(function(){" +
                                         "editInputs = document.getElementsByClassName('EditInput');" +
-                                        "editInputs[0].value = '" + LoginActivity.username + "';" +
-                                        "editInputs[1].value = '" + LoginActivity.password + "';" +
+                                        "editInputs[0].value = '" + LoginActivity.getUsername() + "';" +
+                                        "editInputs[1].value = '" + LoginActivity.getPassword() + "';" +
                                         "document.getElementById('bLogin').click();" +
                                         "})()"
                                 , null);

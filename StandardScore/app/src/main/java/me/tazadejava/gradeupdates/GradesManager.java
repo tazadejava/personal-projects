@@ -1,25 +1,33 @@
 package me.tazadejava.gradeupdates;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlertDialog;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.http.SslError;
 import android.os.AsyncTask;
 import android.os.Build;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +38,14 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.util.Zip4jConstants;
+
+import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalTime;
@@ -44,6 +59,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -337,6 +355,15 @@ public class GradesManager {
                 }
 
                 if(context instanceof UpdatingService) {
+                    File stateIndicator = new File(saveFilePath + "/state.indicator");
+                    if (!stateIndicator.exists()) {
+                        try {
+                            stateIndicator.createNewFile();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
                     handler.postDelayed(new Runnable() {
                         @Override
                         public void run() {
@@ -491,11 +518,6 @@ public class GradesManager {
                 newWeb.setWebViewClient(new WebViewClient() {
 
                     @Override
-                    public void onReceivedSslError (WebView view, SslErrorHandler handler, SslError error) {
-                        handler.proceed();
-                    }
-
-                    @Override
                     public void onPageFinished(final WebView view, String url) {
                         super.onPageFinished(view, url);
 
@@ -579,11 +601,6 @@ public class GradesManager {
         web.setWebViewClient(new WebViewClient() {
 
             @Override
-            public void onReceivedSslError (WebView view, SslErrorHandler handler, SslError error) {
-                handler.proceed();
-            }
-
-            @Override
             public void onPageFinished(final WebView view, String url) {
                 super.onPageFinished(view, url);
 
@@ -603,8 +620,8 @@ public class GradesManager {
                         waitingForNewPageTimeout = 1;
                         view.evaluateJavascript("javascript:(function(){" +
                                         "editInputs = document.getElementsByClassName('EditInput');" +
-                                        "editInputs[0].value = '" + LoginActivity.username + "';" +
-                                        "editInputs[1].value = '" + LoginActivity.password + "';" +
+                                        "editInputs[0].value = '" + LoginActivity.getUsername() + "';" +
+                                        "editInputs[1].value = '" + LoginActivity.getPassword() + "';" +
                                         "document.getElementById('bLogin').click();" +
                                         "})()"
                                 , null);
@@ -1141,64 +1158,66 @@ public class GradesManager {
             }
 
             boolean foundTerm = false;
-            for(ClassPeriod previousPeriod : outdatedClassPeriods.get(checkTerm)) {
-                if(newPeriod.getID().equals(previousPeriod.getID())) {
-                    foundTerm = true;
-                    for(GradeCellItem newItem : newPeriod.getGradedItems()) {
-                        if(newItem instanceof GradedItem) {
-                            if(newItem.getPercentageGrade() != -1 || (!newItem.getPointsReceived().equals("*") && newItem.getPointsTotal().equals("0"))) {
-                                boolean foundAssignment = false;
-                                for (GradeCellItem oldItem : previousPeriod.getGradedItems()) {
-                                    if (oldItem.equals(newItem)) {
-                                        foundAssignment = true;
-                                        if (oldItem.getPercentageGrade() != newItem.getPercentageGrade() || (newItem.getPointsTotal().equals("0") && !newItem.getPointsReceived().equals(oldItem.getPointsReceived()))) {
-                                            changedTermGradeAverages.add(newItem.getPeriod().getTerm());
-                                            appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
-                                            newPeriod.incrementUpdate();
-
-                                            if(newPeriod.getTerm().STR != 0) {
-                                                ((GradedItem) newItem).isTagged = true;
-                                                sendUpdateNotification((GradedItem) newItem, lastContext);
-                                            }
-                                        }
-                                        break;
-                                    }
-                                }
-
-                                if (!foundAssignment) {
-                                    changedTermGradeAverages.add(newItem.getPeriod().getTerm());
-                                    appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
-                                    newPeriod.incrementUpdate();
-                                    if(newPeriod.getTerm().STR != 0) {
-                                        ((GradedItem) newItem).isTagged = true;
-                                        sendUpdateNotification((GradedItem) newItem, lastContext);
-                                    }
-                                }
-                            } else {
-                                if(newItem.getPointsReceived().equals("*")) {
-                                    boolean foundGradedAssignment = false;
+            if(outdatedClassPeriods.get(checkTerm) != null) {
+                for (ClassPeriod previousPeriod : outdatedClassPeriods.get(checkTerm)) {
+                    if (newPeriod.getID().equals(previousPeriod.getID())) {
+                        foundTerm = true;
+                        for (GradeCellItem newItem : newPeriod.getGradedItems()) {
+                            if (newItem instanceof GradedItem) {
+                                if (newItem.getPercentageGrade() != -1 || (!newItem.getPointsReceived().equals("*") && newItem.getPointsTotal().equals("0"))) {
+                                    boolean foundAssignment = false;
                                     for (GradeCellItem oldItem : previousPeriod.getGradedItems()) {
                                         if (oldItem.equals(newItem)) {
-                                            foundGradedAssignment = true;
+                                            foundAssignment = true;
+                                            if (oldItem.getPercentageGrade() != newItem.getPercentageGrade() || (newItem.getPointsTotal().equals("0") && !newItem.getPointsReceived().equals(oldItem.getPointsReceived()))) {
+                                                changedTermGradeAverages.add(newItem.getPeriod().getTerm());
+                                                appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
+                                                newPeriod.incrementUpdate();
+
+                                                if (newPeriod.getTerm().STR != 0) {
+                                                    ((GradedItem) newItem).isTagged = true;
+                                                    sendUpdateNotification((GradedItem) newItem, lastContext);
+                                                }
+                                            }
                                             break;
                                         }
                                     }
 
-                                    if (!foundGradedAssignment) {
+                                    if (!foundAssignment) {
+                                        changedTermGradeAverages.add(newItem.getPeriod().getTerm());
                                         appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
+                                        newPeriod.incrementUpdate();
+                                        if (newPeriod.getTerm().STR != 0) {
+                                            ((GradedItem) newItem).isTagged = true;
+                                            sendUpdateNotification((GradedItem) newItem, lastContext);
+                                        }
+                                    }
+                                } else {
+                                    if (newItem.getPointsReceived().equals("*")) {
+                                        boolean foundGradedAssignment = false;
+                                        for (GradeCellItem oldItem : previousPeriod.getGradedItems()) {
+                                            if (oldItem.equals(newItem)) {
+                                                foundGradedAssignment = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if (!foundGradedAssignment) {
+                                            appendUpdateHistory(currentUpdateNow, (GradedItem) newItem);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    if(!newPeriod.getTeacher().equals(previousPeriod.getTeacher())) {
-                        sendMessageNotification("A teacher has been updated in " + newPeriod.getClassName(), previousPeriod.getTeacher() + " has been replaced", lastContext);
+                        if (!newPeriod.getTeacher().equals(previousPeriod.getTeacher())) {
+                            sendMessageNotification("A teacher has been updated in " + newPeriod.getClassName(), previousPeriod.getTeacher() + " has been replaced", lastContext);
+                        }
+                        if (newPeriod.getComments() != null && !Arrays.equals(newPeriod.getComments(), previousPeriod.getComments())) {
+                            sendCommentUpdateNotification(newPeriod, lastContext);
+                        }
+                        break;
                     }
-                    if(newPeriod.getComments() != null && !Arrays.equals(newPeriod.getComments(), previousPeriod.getComments())) {
-                        sendCommentUpdateNotification(newPeriod, lastContext);
-                    }
-                    break;
                 }
             }
 
@@ -1241,10 +1260,15 @@ public class GradesManager {
             updateHistory.put(time, new ArrayList<UpdateHistoryPoint>());
         }
 
+        UpdateHistoryPoint appendPoint;
         if(newItem.getPointsReceived().equals("*")) {
-            updateHistory.get(time).add(new UpdateHistoryPoint(newItem.getPeriod().getClassName(), newItem.getGradedName(), true, "0", "0"));
+            appendPoint = new UpdateHistoryPoint(newItem.getPeriod().getClassName(), newItem.getGradedName(), true, "0", "0");
         } else {
-            updateHistory.get(time).add(new UpdateHistoryPoint(newItem.getPeriod().getClassName(), newItem.getGradedName(), false, newItem.getPointsReceived(), newItem.getPointsTotal()));
+            appendPoint = new UpdateHistoryPoint(newItem.getPeriod().getClassName(), newItem.getGradedName(), false, newItem.getPointsReceived(), newItem.getPointsTotal());
+        }
+
+        if(!updateHistory.get(time).contains(appendPoint)) {
+            updateHistory.get(time).add(appendPoint);
         }
     }
 
@@ -1290,7 +1314,8 @@ public class GradesManager {
                 nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
             } else {
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+//                nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+                nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
             }
 
             NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -1316,7 +1341,8 @@ public class GradesManager {
                 nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
             } else {
                 intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+//                nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+                nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
             }
 
             NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -1354,7 +1380,8 @@ public class GradesManager {
             nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
         } else {
             intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+//            nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+            nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
         }
 
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -1382,7 +1409,8 @@ public class GradesManager {
             nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
         } else {
             intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+//            nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+            nBuilder.setContentIntent(PendingIntent.getActivity(context, requestID, intent, PendingIntent.FLAG_CANCEL_CURRENT));
         }
 
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -1518,6 +1546,13 @@ public class GradesManager {
                 if(shouldUpdateTerms[i]) {
                     terms.add(termValues.get(i));
                     activeTerms++;
+                }
+            }
+
+            if(activeTerms <= 2) {
+                //after term 3 ends, add term 4 if it doesn't already exist
+                if((shouldUpdateTerms[1] && termDates[4] != null && now.isAfter(termDates[4]))) {
+                    terms.add(ClassPeriod.GradeTerm.T4);
                 }
             }
 
@@ -1736,6 +1771,139 @@ public class GradesManager {
 
     public AverageTermGradeHistoryManager getAverageTermGradeManager() {
         return averageTermGradeManager;
+    }
+
+    public void exportDataToDownloads(final Activity act) {
+        /*
+        if permission to access files not granted, ask for it now.
+        otherwise, access internal storage main folder, create a folder named "Standard Score Data", and store everything in an "encrypted?" folder?
+            everything: ALL the files in the files folder, like an overwrite
+
+         */
+
+        if(ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(act, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+        } else {
+            File mainFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Standard Score Exported Data");
+            if(!mainFolder.exists()) {
+                mainFolder.mkdirs();
+            }
+
+            try {
+                LocalDate now = LocalDate.now();
+                final File stampedFolder = new File(mainFolder.getAbsolutePath() + "/" + now.toString());
+                if(stampedFolder.exists()) {
+                    FileUtils.deleteDirectory(stampedFolder);
+                }
+                stampedFolder.mkdirs();
+
+                final File sourceDirectory = new File(act.getFilesDir().getAbsolutePath());
+
+                Toast.makeText(act, "Exporting, please wait...", Toast.LENGTH_SHORT).show();
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            ZipFile zipFile = new ZipFile(stampedFolder.getAbsolutePath() + "/files.zip");
+                            ZipParameters parameters = new ZipParameters();
+                            parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
+                            parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_ULTRA);
+                            parameters.setEncryptFiles(true);
+                            parameters.setEncryptionMethod(Zip4jConstants.ENC_METHOD_AES);
+                            parameters.setAesKeyStrength(Zip4jConstants.AES_STRENGTH_256);
+                            parameters.setPassword("dj#901ejnc91n$ccmr...o!");
+
+                            zipFile.addFolder(sourceDirectory, parameters);
+
+                            Toast.makeText(act, "Done!", Toast.LENGTH_SHORT).show();
+                        } catch (ZipException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, 100L);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void importDataFromDownloads(final Activity act) {
+        /*
+        To access the data: ask for permission first to access files, then:
+        check if the folder exists, then if a file exists. if so, load it, decrypting it if necessary
+
+        THEN, refresh the entire app somehow? force close and restart, maybe like a crash log?
+
+         */
+
+        if(ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(act, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+        } else {
+            File mainFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Standard Score Exported Data");
+            if(mainFolder.exists()) {
+                if(mainFolder.listFiles().length > 0) {
+                    File sourceFile = null;
+
+                    for(File file : mainFolder.listFiles()) {
+                        if(file.isDirectory()) {
+                            File[] files = file.listFiles();
+
+                            if(files.length == 1 && files[0].getName().equals("files.zip")) {
+                                sourceFile = file;
+                                break;
+                            }
+                        }
+                    }
+
+                    if(sourceFile != null) {
+                        AlertDialog.Builder overwriteWarning = new AlertDialog.Builder(act);
+                        overwriteWarning.setTitle("Overwrite all current data?");
+                        overwriteWarning.setMessage("Export date: " + sourceFile.getName());
+
+                        final File finalSourceFile = sourceFile;
+                        overwriteWarning.setPositiveButton("DO IT", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                try {
+                                    final File targetDirectory = new File(act.getFilesDir().getParent());
+                                    File oldFilesDirectory = new File(act.getFilesDir().getAbsolutePath());
+
+                                    if(oldFilesDirectory.exists()) {
+                                        FileUtils.deleteDirectory(oldFilesDirectory);
+                                    }
+
+                                    Toast.makeText(act, "Importing data...", Toast.LENGTH_SHORT).show();
+
+                                    new Handler().postDelayed(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            try {
+                                                ZipFile zippedFile = new ZipFile(finalSourceFile.listFiles()[0]);
+                                                zippedFile.setPassword("dj#901ejnc91n$ccmr...o!");
+                                                zippedFile.extractAll(targetDirectory.getAbsolutePath());
+
+                                                Intent intent = new Intent(act, LoginActivity.class);
+                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                                act.startActivity(intent);
+                                                System.exit(1);
+                                            } catch (ZipException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                    }, 100L);
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        });
+                        overwriteWarning.setNegativeButton("NO!", null);
+
+                        overwriteWarning.show();
+                    }
+                }
+            }
+        }
     }
 
     public static String getSchoolYear() {
