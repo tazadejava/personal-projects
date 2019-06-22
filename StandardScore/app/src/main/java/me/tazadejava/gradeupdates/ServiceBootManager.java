@@ -15,7 +15,7 @@ public class ServiceBootManager extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if(Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-            if (pref.getBoolean(SettingsActivity.PREF_ENABLE_SERVICE, false)) {
+            if (!pref.getBoolean(SettingsActivity.PREF_ENABLE_SERVICE, false)) {
                 return;
             }
 
