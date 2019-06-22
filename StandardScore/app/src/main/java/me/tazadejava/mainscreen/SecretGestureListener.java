@@ -1,6 +1,8 @@
 package me.tazadejava.mainscreen;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -9,6 +11,8 @@ import android.view.View;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import me.tazadejava.intro.StandardScoreApplication;
 
 public abstract class SecretGestureListener implements View.OnTouchListener {
 
@@ -23,9 +27,9 @@ public abstract class SecretGestureListener implements View.OnTouchListener {
     }
 
     private final GestureDetector gestureDetector;
-    private Activity activity;
+    private PeriodListActivity activity;
 
-    public SecretGestureListener(Activity activity) {
+    public SecretGestureListener(PeriodListActivity activity) {
         this.activity = activity;
         gestureDetector = new GestureDetector(activity, new GestureListener());
     }
@@ -118,14 +122,20 @@ public abstract class SecretGestureListener implements View.OnTouchListener {
             switch(previousGestures.size()) {
                 case 10:
                     Gesture[] key = new Gesture[] {Gesture.UP, Gesture.UP, Gesture.DOWN, Gesture.DOWN, Gesture.LEFT, Gesture.RIGHT, Gesture.LEFT, Gesture.RIGHT, Gesture.CLICK, Gesture.CLICK};
-                    if(Arrays.equals(previousGestures.toArray(new Gesture[10]), key)) {
+                    if(Arrays.equals(previousGestures.toArray(new Gesture[0]), key)) {
                         onKonamiCodeSuccess();
                     }
                     break;
                 case 7:
                     key = new Gesture[] {Gesture.CLICK, Gesture.CLICK, Gesture.CLICK, Gesture.LEFT, Gesture.RIGHT, Gesture.LEFT, Gesture.RIGHT};
-                    if(Arrays.equals(previousGestures.toArray(new Gesture[7]), key)) {
+                    if(Arrays.equals(previousGestures.toArray(new Gesture[0]), key)) {
                         viewServiceLog();
+                    }
+                    break;
+                case 12:
+                    key = new Gesture[] {Gesture.CLICK, Gesture.CLICK, Gesture.UP, Gesture.CLICK, Gesture.CLICK, Gesture.RIGHT, Gesture.CLICK, Gesture.CLICK, Gesture.DOWN, Gesture.CLICK, Gesture.CLICK, Gesture.LEFT};
+                    if(Arrays.equals(previousGestures.toArray(new Gesture[0]), key)) {
+                        viewDataTransferDialog();
                     }
                     break;
             }
@@ -133,6 +143,28 @@ public abstract class SecretGestureListener implements View.OnTouchListener {
 
         private void viewServiceLog() {
             activity.startActivity(new Intent(activity, ServiceLogActivity.class));
+        }
+
+        private void viewDataTransferDialog() {
+            String[] options = {"Import Data", "Export Data"};
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+            builder.setTitle("Select an option...");
+            builder.setItems(options, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    switch(which) {
+                        case 0:
+                            ((StandardScoreApplication) activity.getApplication()).getGradesManager().importDataFromDownloads(activity);
+                            break;
+                        case 1:
+                            ((StandardScoreApplication) activity.getApplication()).getGradesManager().exportDataToDownloads(activity);
+                            break;
+                    }
+                }
+            });
+
+            builder.show();
         }
     }
 }
