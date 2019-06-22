@@ -5,11 +5,13 @@ import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
 import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.Viewport;
 import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.DataPointInterface;
@@ -53,7 +55,7 @@ public class TermGraphDetailsFragment extends Fragment {
         return parentView;
     }
 
-    private void setupGraph(ClassPeriod.GradeTerm term, GraphView graph) {
+    private void setupGraph(ClassPeriod.GradeTerm term, final GraphView graph) {
 
         LineGraphSeries<DataPoint> percentages = new LineGraphSeries<>();
 
@@ -171,7 +173,8 @@ public class TermGraphDetailsFragment extends Fragment {
         graph.getGridLabelRenderer().setVerticalAxisTitle("Percentage (%)");
         graph.getGridLabelRenderer().setHorizontalAxisTitle("Date (month/day)");
         graph.getGridLabelRenderer().setHumanRounding(false);
-        graph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(getContext(), new SimpleDateFormat("MM/dd")));
+        DateAsXAxisLabelFormatter xAxisFormatter = new DateAsXAxisLabelFormatter(getContext(), new SimpleDateFormat("MM/dd"));
+        graph.getGridLabelRenderer().setLabelFormatter(xAxisFormatter);
         graph.getGridLabelRenderer().setLabelsSpace(4);
         graph.getGridLabelRenderer().setNumHorizontalLabels(sorted.size() < 5 ? sorted.size() : 5);
     }

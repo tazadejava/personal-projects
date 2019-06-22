@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -37,6 +38,7 @@ import android.widget.Toast;
 
 import org.joda.time.LocalDate;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -62,6 +64,7 @@ public class PeriodListActivity extends AppCompatActivity {
     public static boolean isRunning, isOnForeground;
 
     public boolean isLoggedIn;
+    private boolean hasCheckedLogin;
 
     public TextView mainText, lastUpdateText, termDates, firstTimeHelperText;
     private RecyclerView periodList;
@@ -74,6 +77,7 @@ public class PeriodListActivity extends AppCompatActivity {
     private ColorStateList originalTextViewColor;
 
     private Menu menu;
+    private SecretGestureListener secretGestureListener;
 
     @SuppressLint("ClickableViewAccessibility")
     @Override
@@ -116,7 +120,8 @@ public class PeriodListActivity extends AppCompatActivity {
 
         final RelativeLayout mainLayout = findViewById(R.id.activity_main);
         final ColorStateList originalTextviewColor = termDates.getTextColors();
-        mainLayout.setOnTouchListener(new SecretGestureListener(this) {
+
+        secretGestureListener = new SecretGestureListener(this) {
 
             private long lastClassInvisibleTime = 0;
             private boolean canGesture;
@@ -226,7 +231,9 @@ public class PeriodListActivity extends AppCompatActivity {
                     }
                 }, 5000);
             }
-        });
+        };
+
+        mainLayout.setOnTouchListener(secretGestureListener);
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         if(CustomExceptionHandler.hasCrashLogs(this) && sharedPref.getBoolean(SettingsActivity.PREF_ENABLE_CRASH_LOG_TOAST, false)) {
@@ -268,6 +275,12 @@ public class PeriodListActivity extends AppCompatActivity {
             Intent intent = new Intent(this, ClassDetailsActivity.class);
             intent.putExtras(getIntent());
             startActivity(intent);
+        }
+
+        String saveFilePath = getFilesDir().getAbsolutePath() + "/" + LoginActivity.currentUUID;
+        File stateIndicator = new File(saveFilePath + "/state.indicator");
+        if(stateIndicator.exists()) {
+            stateIndicator.delete();
         }
     }
 
@@ -313,11 +326,12 @@ public class PeriodListActivity extends AppCompatActivity {
             }
         }, 60000);
 
-        if(LoginActivity.password == null && !LoginActivity.hasCheckedForCredentials) {
+        if(LoginActivity.getPassword() == null && !hasCheckedLogin) {
+            hasCheckedLogin = true;
             LoginActivity.loadFiles(this);
         }
 
-        if(LoginActivity.password != null) {
+        if(LoginActivity.getPassword() != null) {
             isLoggedIn = true;
             findViewById(R.id.backToLogin).setVisibility(View.INVISIBLE);
 
@@ -428,6 +442,19 @@ public class PeriodListActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         isOnForeground = true;
+
+        if(currentViewTerm != null) {
+            String saveFilePath = getFilesDir().getAbsolutePath() + "/" + LoginActivity.currentUUID;
+            File stateIndicator = new File(saveFilePath + "/state.indicator");
+            if(stateIndicator.exists()) {
+                UpdatingService.logMessage("Found the state indicator... Reloading the view!", this);
+                stateIndicator.delete();
+                finish();
+                startActivity(getIntent());
+            } else {
+                updateViews(currentViewTerm);
+            }
+        }
     }
 
     @Override
@@ -436,6 +463,22 @@ public class PeriodListActivity extends AppCompatActivity {
 
         if(getGradesManager() != null && getGradesManager().areGradesUpdating()) {
             getGradesManager().abortUpdate();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch(requestCode) {
+            case 0:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    getGradesManager().exportDataToDownloads(this);
+                }
+                break;
+            case 1:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    getGradesManager().importDataFromDownloads(this);
+                }
+                break;
         }
     }
 
@@ -578,6 +621,8 @@ public class PeriodListActivity extends AppCompatActivity {
     public void setPeriodListView(RecyclerView view) {
         periodList = view;
         periodList.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
+        ((PeriodListAdapter) periodList.getAdapter()).setSecretGestureListener(secretGestureListener);
     }
 
     public void openGradeRefreshDialog(View view) {

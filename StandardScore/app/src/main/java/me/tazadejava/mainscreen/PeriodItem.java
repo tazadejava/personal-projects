@@ -8,14 +8,14 @@ import me.tazadejava.gradeupdates.ClassPeriod;
 public class PeriodItem {
 
     public ClassPeriod classLink;
-    private String className, teacherName, termGrade, semesterGrade;
+    private String className, teacherName, termGrade, assignmentUpdates;
 
     public PeriodItem(ClassPeriod classLink) {
         this.classLink = classLink;
         this.className = "P" + classLink.getPeriod() + ": " + classLink.getClassName();
         this.teacherName = classLink.getTeacher();
         this.termGrade = classLink.getLetterGrade() + (classLink.getPercentage() == -1 ? "" : " (" + classLink.getPercentage() + "%)");
-        this.semesterGrade = (classLink.getUpdates() > 0 ? "!!! (" + classLink.getUpdates() + ")" : "");
+        this.assignmentUpdates = (classLink.getUpdates() > 0 ? "!!! (" + classLink.getUpdates() + ")" : "");
     }
 
     public String getClassName() {
@@ -30,7 +30,7 @@ public class PeriodItem {
         return termGrade;
     }
 
-    public String getSemesterGrade() {
-        return semesterGrade;
+    public String getAssignmentUpdates() {
+        return assignmentUpdates;
     }
 }

@@ -32,8 +32,8 @@ public class MainPeriodListFragment extends Fragment {
     }
 
     private void initializePeriodList() {
-        ((PeriodListActivity) getActivity()).setPeriodListView(periodList);
         periodList.setAdapter(new PeriodListAdapter(getActivity(), ((StandardScoreApplication) getActivity().getApplication()).getGradesManager().getTermPeriodList(term)));
+        ((PeriodListActivity) getActivity()).setPeriodListView(periodList);
         periodList.setLayoutManager(new LinearLayoutManager(getActivity()));
     }
 }
