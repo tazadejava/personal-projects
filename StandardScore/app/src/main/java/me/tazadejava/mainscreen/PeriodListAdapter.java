@@ -8,12 +8,12 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.List;
 
 import me.tazadejava.classdetails.ClassDetailsActivity;
-import me.tazadejava.intro.StandardScoreApplication;
 import me.tazadejava.standardscore.R;
 
 /**
@@ -24,15 +24,20 @@ public class PeriodListAdapter extends RecyclerView.Adapter<PeriodListAdapter.Vi
     private Activity activity;
     public List<PeriodItem> periodItems;
 
+    private SecretGestureListener secretGestureListener;
+
     public class ViewHolder extends RecyclerView.ViewHolder {
 
-        public TextView termGrade, semesterGrade, className, teacherName;
+        public RelativeLayout periodItemLayout;
+        public TextView termGrade, assignmentUpdates, miscUpdates, className, teacherName;
 
         public ViewHolder(View itemView) {
             super(itemView);
 
+            periodItemLayout = itemView.findViewById(R.id.periodItemLayout);
             termGrade = itemView.findViewById(R.id.termGrade);
-            semesterGrade = itemView.findViewById(R.id.semesterLetterGrade);
+            assignmentUpdates = itemView.findViewById(R.id.assignmentUpdates);
+            miscUpdates = itemView.findViewById(R.id.miscUpdates);
             className = itemView.findViewById(R.id.className);
             teacherName = itemView.findViewById(R.id.teacherName);
         }
@@ -58,15 +63,27 @@ public class PeriodListAdapter extends RecyclerView.Adapter<PeriodListAdapter.Vi
         final PeriodItem item = periodItems.get(position);
 
         holder.termGrade.setText(item.getTermGrade());
-        holder.semesterGrade.setText(item.getSemesterGrade());
+        holder.assignmentUpdates.setText(item.getAssignmentUpdates());
+
+        if(item.classLink.getMissingAssignmentsCount() != 0) {
+            holder.miscUpdates.setText("(" + item.classLink.getMissingAssignmentsCount() + ")");
+        } else {
+            holder.miscUpdates.setText("");
+        }
+
         holder.className.setText(item.getClassName());
-        holder.teacherName.setText(item.getTeacherName());
+
+        if(item.classLink.getComments() != null) {
+            holder.teacherName.setText(item.getTeacherName() + "*");
+        } else {
+            holder.teacherName.setText(item.getTeacherName());
+        }
 
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 getPeriodDetails(item);
-                holder.semesterGrade.setText("");
+                holder.assignmentUpdates.setText("");
             }
         });
 
@@ -75,6 +92,22 @@ public class PeriodListAdapter extends RecyclerView.Adapter<PeriodListAdapter.Vi
         } else {
             holder.itemView.setBackgroundColor(Color.WHITE);
         }
+
+        if(position == getItemCount() - 1) {
+            holder.periodItemLayout.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    secretGestureListener.onLongPressEvent();
+                    return true;
+                }
+            });
+        } else {
+            holder.periodItemLayout.setOnLongClickListener(null);
+        }
+    }
+
+    public void setSecretGestureListener(SecretGestureListener secretGestureListener) {
+        this.secretGestureListener = secretGestureListener;
     }
 
     private void getPeriodDetails(PeriodItem item) {

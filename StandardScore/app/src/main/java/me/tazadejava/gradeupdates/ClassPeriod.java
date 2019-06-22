@@ -205,7 +205,7 @@ public class ClassPeriod {
     public boolean shouldUpdate() {
         LocalDate now = LocalDate.now();
 
-        return now.isAfter(termBeginDate) && now.isBefore(termEndDate.plusDays(14));
+        return now.isAfter(termBeginDate) && now.isBefore(termEndDate.plusDays(18));
     }
 
     public boolean isCurrentTerm() {
@@ -238,6 +238,20 @@ public class ClassPeriod {
 
     public int getUpdates() {
         return updates;
+    }
+
+    public int getMissingAssignmentsCount() {
+        int missing = 0;
+
+        for(GradeCellItem item : gradedItems) {
+            if(item instanceof GradedItem) {
+                if(((GradedItem) item).isMissing()) {
+                    missing++;
+                }
+            }
+        }
+
+        return missing;
     }
 
     public void resetUpdates() {
