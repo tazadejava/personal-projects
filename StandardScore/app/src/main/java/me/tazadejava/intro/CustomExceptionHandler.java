@@ -61,7 +61,9 @@ public class CustomExceptionHandler implements Thread.UncaughtExceptionHandler {
 
         saveCrashLog(stacktrace);
 
-        restartApp();
+        if(getNumberOfRecentCrashes() < 2) {
+            restartApp();
+        }
     }
 
     private void restartApp() {
@@ -70,6 +72,28 @@ public class CustomExceptionHandler implements Thread.UncaughtExceptionHandler {
         context.startActivity(intent);
 
         System.exit(1);
+    }
+
+    private int getNumberOfRecentCrashes() {
+        File dataFolder = new File(path + "/crashes/");
+        if(dataFolder.exists()) {
+            File[] crashes = dataFolder.listFiles();
+
+            int recentCrashes = 0;
+
+            LocalDateTime now = LocalDateTime.now();
+            for(File crash : crashes) {
+                LocalDateTime time = LocalDateTime.parse(crash.getName().replace(".txt", ""));
+
+                if(time.plusSeconds(5).isAfter(now)) {
+                    recentCrashes++;
+                }
+            }
+
+            return recentCrashes;
+        }
+
+        return 0;
     }
 
     private void saveCrashLog(String log) {

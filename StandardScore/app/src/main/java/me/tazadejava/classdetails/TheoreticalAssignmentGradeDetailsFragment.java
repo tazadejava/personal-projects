@@ -103,7 +103,7 @@ public class TheoreticalAssignmentGradeDetailsFragment extends Fragment {
                             outOfPercentage = "XC";
                         }
 
-                        double resultingPercentage = calculator.calculateResultingTermPercentage(Double.parseDouble(lastOutOfReceived), Double.parseDouble(item.getPointsTotal()));
+                        double resultingPercentage = calculator.calculateResultingTermPercentage(item, Double.parseDouble(lastOutOfReceived), Double.parseDouble(item.getPointsTotal()));
                         resultingPercentage = Math.round(resultingPercentage * 100d) / 100d;
                         if(item.getPointsReceived().equals("*")) {
                             ifOutOfScore.setText(Html.fromHtml("If you get <b>" + lastOutOfReceived + " out of " + item.getPointsTotal() + " (" + outOfPercentage + ")</b>, <br>the " + termName + " grade will be: <b>" + GradesManager.getLetterGrade(resultingPercentage) + " (" + resultingPercentage + "%)</b>."));
@@ -148,7 +148,7 @@ public class TheoreticalAssignmentGradeDetailsFragment extends Fragment {
                         double inputtedPercentage = Double.parseDouble(input.getText().toString());
                         int pointsTotal = Integer.parseInt(item.getPointsTotal());
 
-                        double requiredPoints = calculator.calculateRequiredPointsReceived(inputtedPercentage, pointsTotal);
+                        double requiredPoints = calculator.calculateRequiredPointsReceived(item, inputtedPercentage, pointsTotal);
 
                         String outOfPercentage;
                         if(pointsTotal == 0) {

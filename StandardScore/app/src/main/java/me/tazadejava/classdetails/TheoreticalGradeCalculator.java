@@ -14,7 +14,7 @@ public class TheoreticalGradeCalculator {
         this.selectedHeaderItem = selectedHeaderItem;
     }
 
-    public double calculateResultingTermPercentage(double pointsReceived, double pointsTotal) {
+    public double calculateResultingTermPercentage(GradedItem gradedItem, double pointsReceived, double pointsTotal) {
         double calculatedPercentage = 0d;
         List<AdjustedHeaderItem> headerItems = period.getAdjustedHeaderItems(selectedHeaderItem);
         for(AdjustedHeaderItem header : headerItems) {
@@ -26,7 +26,7 @@ public class TheoreticalGradeCalculator {
             }
 
             if (header.header == null || selectedHeaderItem.getBoldedText().equals(header.header.getBoldedText())) {
-                calculatedPercentage += getAddedSectionPercentage(header, pointsReceived, pointsTotal);
+                calculatedPercentage += getAddedSectionPercentage(header, gradedItem, pointsReceived, pointsTotal);
             } else {
                 double headerGrade = header.weight * header.percentageGrade / 100d;
                 if(headerGrade > header.weight) {
@@ -39,7 +39,7 @@ public class TheoreticalGradeCalculator {
         return calculatedPercentage;
     }
 
-    public double calculateRequiredPointsReceived(double percentage, int pointsTotal) {
+    public double calculateRequiredPointsReceived(GradedItem gradedItem, double percentage, int pointsTotal) {
         double requiredScore = percentage;
 
         AdjustedHeaderItem adjustedHeader = null;
@@ -64,25 +64,34 @@ public class TheoreticalGradeCalculator {
             }
         }
 
-        requiredScore = getAddedPointsForPercentage(adjustedHeader, pointsTotal, requiredScore);
+        requiredScore = getAddedPointsForPercentage(adjustedHeader, gradedItem, pointsTotal, requiredScore);
         return requiredScore;
     }
 
-    private double getAddedPointsForPercentage(AdjustedHeaderItem header, double pointsTotal, double currentDownedPercentage) {
+    private double getAddedPointsForPercentage(AdjustedHeaderItem header, GradedItem gradedItem, double pointsTotal, double currentDownedPercentage) {
         double pointsRequired;
-        pointsRequired = (currentDownedPercentage / header.weight * (Double.parseDouble(header.pointsTotal) + pointsTotal)) - (Double.parseDouble(header.pointsReceived));
+
+        if(gradedItem != null && !gradedItem.getPointsReceived().equals("*")) {
+            pointsRequired = (currentDownedPercentage / header.weight * (Double.parseDouble(header.pointsTotal))) - Double.parseDouble(header.pointsReceived) + Double.parseDouble(gradedItem.getPointsReceived());
+        } else {
+            pointsRequired = (currentDownedPercentage / header.weight * (Double.parseDouble(header.pointsTotal) + pointsTotal)) - Double.parseDouble(header.pointsReceived);
+        }
 
         pointsRequired = Math.round(pointsRequired * 10d) / 10d;
 
         return pointsRequired;
     }
 
-    private double getAddedSectionPercentage(AdjustedHeaderItem header, double addTop, double addBottom) {
+    private double getAddedSectionPercentage(AdjustedHeaderItem header, GradedItem gradedItem, double addTop, double addBottom) {
         double receivedHeader = Double.valueOf(header.pointsReceived);
         double totalHeader = Double.valueOf(header.pointsTotal);
 
         double percentage;
-        percentage = header.weight * (receivedHeader + addTop) / (totalHeader + addBottom);
+        if(gradedItem != null && !gradedItem.getPointsReceived().equals("*")) {
+            percentage = header.weight * (receivedHeader - Double.valueOf(gradedItem.getPointsReceived()) + addTop) / totalHeader;
+        } else {
+            percentage = header.weight * (receivedHeader + addTop) / (totalHeader + addBottom);
+        }
 
         if(percentage > header.weight) {
             percentage = header.weight;

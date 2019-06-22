@@ -33,7 +33,7 @@ public class ClassDetailsFragment extends Fragment {
         period = ((StandardScoreApplication) getActivity().getApplication()).getGradesManager().getCurrentPeriodByIndexAndTerm(getArguments().getInt("classPeriod"), ClassPeriod.GradeTerm.valueOf(getArguments().getString("classTerm")));
 
         recyclerView = parentView.findViewById(R.id.gradeCellsList);
-        recyclerView.setAdapter(new GradeCellAdapter((AppCompatActivity) getActivity(), period.getGradedItems()));
+        updateGradeCellAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
         recyclerView.setMotionEventSplittingEnabled(false);
@@ -76,7 +76,12 @@ public class ClassDetailsFragment extends Fragment {
     }
 
     public void toggleInactiveHeaders() {
-        if(inactiveHeadersEnabled) {
+        inactiveHeadersEnabled = !inactiveHeadersEnabled;
+        updateGradeCellAdapter();
+    }
+
+    private void updateGradeCellAdapter() {
+        if(!inactiveHeadersEnabled) {
             List<GradeCellItem> modifiedGradedItems = new ArrayList<>(period.getGradedItems());
 
             boolean eraseHeader = false;
@@ -96,7 +101,6 @@ public class ClassDetailsFragment extends Fragment {
         } else {
             recyclerView.setAdapter(new GradeCellAdapter((AppCompatActivity) getActivity(), period.getGradedItems()));
         }
-        inactiveHeadersEnabled = !inactiveHeadersEnabled;
     }
 
     public Parcelable getSaveState() {

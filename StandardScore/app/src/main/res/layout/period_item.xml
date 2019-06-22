@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:id="@+id/periodItemLayout"
     android:paddingTop="10dp"
     android:paddingBottom="10dp"
     android:paddingLeft="8dp"
@@ -20,22 +21,32 @@
         android:layout_below="@id/className"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="LUCIANNA WEBER"/>
+        android:text="LUCIANNA WEBER*"/>
 
     <TextView
         android:id="@+id/termGrade"
-        android:paddingLeft="8dp"
-        android:layout_below="@id/teacherName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="A (92.10%)"/>
+        android:layout_below="@id/teacherName"
+        android:paddingLeft="8dp"
+        android:text="A (92.10%)" />
 
     <TextView
-        android:id="@+id/semesterLetterGrade"
+        android:id="@+id/assignmentUpdates"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:textColor="@android:color/holo_blue_light"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/miscUpdates"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/assignmentUpdates"
+        android:layout_alignParentRight="true"
+        android:textColor="@android:color/holo_red_light"
         android:textSize="20sp"
         android:textStyle="bold" />
 

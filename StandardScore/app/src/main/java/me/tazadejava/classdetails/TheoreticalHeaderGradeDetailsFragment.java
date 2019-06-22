@@ -57,7 +57,7 @@ public class TheoreticalHeaderGradeDetailsFragment extends Fragment {
 
                 final EditText input = new EditText(getContext());
                 input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                input.setText("" + (lastOutOfReceived.equals("-") ? 1 : lastOutOfReceived));
+                input.setText("" + (lastOutOfReceived.equals("-") ? 100 : lastOutOfReceived));
                 input.selectAll();
                 builder.setView(input);
 
@@ -74,7 +74,7 @@ public class TheoreticalHeaderGradeDetailsFragment extends Fragment {
 
                         final EditText input = new EditText(getContext());
                         input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                        input.setText("" + (lastTotal.equals("-") ? 1 : lastTotal));
+                        input.setText("" + (lastTotal.equals("-") ? 100 : lastTotal));
                         input.selectAll();
                         builder.setView(input);
 
@@ -96,7 +96,7 @@ public class TheoreticalHeaderGradeDetailsFragment extends Fragment {
                                     outOfPercentage = (Math.round(inputtedScoreReceived / inputtedScoreTotal * 10000d) / 100d) + "%";
                                 }
 
-                                double resultingPercentage = calculator.calculateResultingTermPercentage(Double.parseDouble(lastOutOfReceived), Double.parseDouble(lastTotal));
+                                double resultingPercentage = calculator.calculateResultingTermPercentage(null, Double.parseDouble(lastOutOfReceived), Double.parseDouble(lastTotal));
                                 resultingPercentage = Math.round(resultingPercentage * 100d) / 100d;
 
                                 ifOutOfScore.setText(Html.fromHtml("If you get <b>" + lastOutOfReceived + " out of " + lastTotal + " (" + outOfPercentage + ")</b>, <br>the " + termName + " grade will be: <b>" + GradesManager.getLetterGrade(resultingPercentage) + " (" + resultingPercentage + "%)</b>."));
@@ -130,40 +130,6 @@ public class TheoreticalHeaderGradeDetailsFragment extends Fragment {
         ifTermGrade.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (lastTotal.equals("-")) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                    builder.setTitle("Set a theoretical total grade score");
-
-                    final EditText input = new EditText(getContext());
-                    input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
-                    input.setText("1");
-                    input.selectAll();
-                    builder.setView(input);
-
-                    builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            if(input.getText().toString().isEmpty()) {
-                                return;
-                            }
-                            lastTotal = input.getText().toString();
-
-                            ifTermGrade.performClick();
-                        }
-                    });
-                    builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
-
-                    AlertDialog dialog = builder.create();
-                    dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-                    dialog.show();
-                    return;
-                }
-
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 builder.setTitle("Set a theoretical percentage");
 
@@ -181,25 +147,54 @@ public class TheoreticalHeaderGradeDetailsFragment extends Fragment {
                         }
                         lastPercentage = input.getText().toString();
 
-                        double inputtedPercentage = Double.parseDouble(input.getText().toString());
-                        int pointsTotal = Integer.parseInt(lastTotal);
+                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                        builder.setTitle("Set a theoretical total grade score");
 
-                        double requiredPoints = calculator.calculateRequiredPointsReceived(inputtedPercentage, pointsTotal);
+                        final EditText input = new EditText(getContext());
+                        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                        input.setText("" + (lastTotal.equals("-") ? 100 : lastTotal));
+                        input.selectAll();
+                        builder.setView(input);
 
-                        String outOfPercentage;
-                        if(pointsTotal == 0) {
-                            outOfPercentage = "XC";
-                        } else {
-                            outOfPercentage = (Math.round(requiredPoints / pointsTotal * 10000d) / 100d) + "%";
-                        }
+                        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if(input.getText().toString().isEmpty()) {
+                                    return;
+                                }
+                                lastTotal = input.getText().toString();
 
-                        if (requiredPoints > pointsTotal && pointsTotal > 0) {
-                            ifTermGrade.setText(Html.fromHtml("To get <b>" + input.getText() + "%</b> for " + termName + ", <br>it's not possible. Sorry! You need <b>" + requiredPoints + " out of " + pointsTotal + " (" + outOfPercentage + ")."));
-                        } else if (requiredPoints <= 0) {
-                            ifTermGrade.setText(Html.fromHtml("To get <b>" + input.getText() + "%</b> for " + termName + ", <br>you don't have to do anything (any grade on this assignment will reach the threshold)!"));
-                        } else {
-                            ifTermGrade.setText(Html.fromHtml("To get <b>" + input.getText() + "%</b> for " + termName + ", <br>it's necessary to get at least: <b>" + requiredPoints + " out of " + pointsTotal + " (" + outOfPercentage + ")</b> on this assignment."));
-                        }
+                                double inputtedPercentage = Double.parseDouble(lastPercentage);
+                                int pointsTotal = Integer.parseInt(lastTotal);
+
+                                double requiredPoints = calculator.calculateRequiredPointsReceived(null, inputtedPercentage, pointsTotal);
+
+                                String outOfPercentage;
+                                if(pointsTotal == 0) {
+                                    outOfPercentage = "XC";
+                                } else {
+                                    outOfPercentage = (Math.round(requiredPoints / pointsTotal * 10000d) / 100d) + "%";
+                                }
+
+                                if (requiredPoints > pointsTotal && pointsTotal > 0) {
+                                    ifTermGrade.setText(Html.fromHtml("To get <b>" + lastPercentage + "%</b> for " + termName + ", <br>it's not possible. Sorry! You need <b>" + requiredPoints + " out of " + pointsTotal + " (" + outOfPercentage + ")."));
+                                } else if (requiredPoints <= 0) {
+                                    ifTermGrade.setText(Html.fromHtml("To get <b>" + lastPercentage + "%</b> for " + termName + ", <br>you don't have to do anything (any grade on this assignment will reach the threshold)!"));
+                                } else {
+                                    ifTermGrade.setText(Html.fromHtml("To get <b>" + lastPercentage + "%</b> for " + termName + ", <br>it's necessary to get at least: <b>" + requiredPoints + " out of " + pointsTotal + " (" + outOfPercentage + ")</b> on this assignment."));
+                                }
+                            }
+                        });
+                        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.cancel();
+                            }
+                        });
+
+                        AlertDialog dialog2 = builder.create();
+                        dialog2.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+                        dialog2.show();
                     }
                 });
                 builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

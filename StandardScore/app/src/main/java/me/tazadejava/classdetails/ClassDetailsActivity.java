@@ -114,8 +114,13 @@ public class ClassDetailsActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
+    public void onPause() {
+        super.onPause();
+
+        if(previousUpdatesCount != 0) {
+            previousUpdatesCount = 0;
+            ((StandardScoreApplication) getApplication()).getGradesManager().saveData(this);
+        }
     }
 
     @Override

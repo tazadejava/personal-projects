@@ -27,6 +27,7 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -55,8 +56,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private static SecretKey key;
     public static String currentUUID;
-    public static String username, password;
-    public static boolean hasCheckedForCredentials;
+    private static String username, password;
 
     private boolean hasLoggedIn = false, pageFinished = false;
 
@@ -148,8 +148,23 @@ public class LoginActivity extends AppCompatActivity {
         LoginActivity.password = password;
 
         currentUUID = null;
+
+        //TODO: IF THE CURRENT.TXT EXISTS, THEN USE THAT UUID INSTEAD OF SEARCHING FOR ANOTHER ONE? MAYBE!?!?!??!
+
+        List<File> potentialLogins = new ArrayList<>();
+
         for(File file : new File(getFilesDir().getAbsolutePath()).listFiles()) {
             if(file.isDirectory() && file.getName().split("-").length == 5) {
+                potentialLogins.add(file);
+            }
+        }
+
+
+        File uuidFile = new File(getFilesDir().getAbsolutePath() + "/current.txt");
+//        if(uuidFile.exists() && potentialLogins.size() == 1) { //TODO: FIX THIS... IF THE USERNAME DOESN'T EXIST, HOW CAN IT TELL THAT IT IS THE SAME USER?!?!? THIS DOES NOT WORK BECAUSE MULTIPLE ACCOUNTS ARE NOW DISABLED...
+//            currentUUID = potentialLogins.get(0).getName();
+//        } else {
+            for (File file : potentialLogins) {
                 File loginInfoFile = new File(file.getAbsolutePath() + "/loginData.txt");
 
                 try {
@@ -163,14 +178,14 @@ public class LoginActivity extends AppCompatActivity {
                     String[] split = read.split(", ");
                     byte[] array = new byte[split.length];
                     int c = 0;
-                    for(String str : split) {
+                    for (String str : split) {
                         array[c] = Byte.valueOf(str);
                         c++;
                     }
 
                     String checkingUsername = decrypt(array, checkingKey);
 
-                    if(username.equals(checkingUsername)) {
+                    if (username.equals(checkingUsername)) {
                         currentUUID = file.getName();
                     }
 
@@ -179,11 +194,11 @@ public class LoginActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
 
-                if(currentUUID != null) {
+                if (currentUUID != null) {
                     break;
                 }
             }
-        }
+//        }
 
         if(currentUUID == null) {
             currentUUID = UUID.randomUUID().toString();
@@ -265,8 +280,6 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             reader.close();
-
-            hasCheckedForCredentials = true;
         } catch (IOException e) {
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
@@ -297,7 +310,7 @@ public class LoginActivity extends AppCompatActivity {
 
             FileWriter writer = new FileWriter(dataFile, false);
 
-            for(int i = 0; i < lines.size() - 1; i++) {
+            for(int i = 0; i < (lines.size() >= 2 ? 2 : lines.size()); i++) {
                 writer.append(lines.get(i) + "\n");
             }
             writer.close();
@@ -444,7 +457,7 @@ public class LoginActivity extends AppCompatActivity {
                 view.evaluateJavascript("javascript:(function(){" +
                         "editInputs = document.getElementsByClassName('EditInput');" +
                         "editInputs[0].value = '" + username + "';" +
-                        "editInputs[1].value = '" + password + "';" +
+                        "editInputs[1].value = '" + password.replace("\\", "\\\\") + "';" +
                         "document.getElementById('bLogin').click();" +
                         "})()"
                         , null);
@@ -461,6 +474,17 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         web.loadUrl("https://www2.saas.wa-k12.net/scripts/cgiip.exe/WService=wlkwashs71/fwemnu01.w");
+    }
+
+    public static String getUsername() {
+        return username;
+    }
+
+    public static String getPassword() {
+        if(password == null) {
+            return null;
+        }
+        return password.replace("\\", "\\\\");
     }
 
     public static String getAccountPath(Context context) {

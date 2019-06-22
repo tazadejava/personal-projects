@@ -69,7 +69,9 @@ public class UpdateHistoryAdapter extends RecyclerView.Adapter<UpdateHistoryAdap
         boolean keepHistoryDetailsVisible = false;
         if (getItemCount() > position + 1 && updateDates.get(position + 1).getDayOfMonth() != updateDates.get(position).getDayOfMonth()) {
             keepHistoryDetailsVisible = true;
-            holder.historyDate.setPadding(0, 0, 0, 32);
+        }
+        if (position > 0 && updateDates.get(position - 1).getDayOfMonth() != updateDates.get(position).getDayOfMonth()) {
+            holder.historyDate.setPadding(0, 32, 0, 0);
         } else {
             holder.historyDate.setPadding(0, 0, 0, 0);
         }

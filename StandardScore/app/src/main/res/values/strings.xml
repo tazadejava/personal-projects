@@ -12,4 +12,5 @@
     <string name="grades_list_toolbar_hide_inactive_headers">Hide Inactive Headers</string>
 
     <string name="schedule_toolbar_refresh">Refresh</string>
+    <string name="service_log_share_text_file">Export as Text File</string>
 </resources>

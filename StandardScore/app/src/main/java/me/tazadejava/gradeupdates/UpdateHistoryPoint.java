@@ -1,5 +1,7 @@
 package me.tazadejava.gradeupdates;
 
+import java.util.Objects;
+
 public class UpdateHistoryPoint {
 
     public String className, assignmentName;
@@ -33,5 +35,22 @@ public class UpdateHistoryPoint {
 
     public String save() {
         return className + ";" + assignmentName + ";" + isUngraded + ";" + pointsReceived + ";" + pointsTotal;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UpdateHistoryPoint that = (UpdateHistoryPoint) o;
+        return isUngraded == that.isUngraded &&
+                Objects.equals(className, that.className) &&
+                Objects.equals(assignmentName, that.assignmentName) &&
+                Objects.equals(pointsReceived, that.pointsReceived) &&
+                Objects.equals(pointsTotal, that.pointsTotal);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(className, assignmentName, pointsReceived, pointsTotal, isUngraded);
     }
 }
