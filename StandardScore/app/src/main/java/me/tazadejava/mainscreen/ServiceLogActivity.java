@@ -1,20 +1,32 @@
 package me.tazadejava.mainscreen;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import org.joda.time.LocalDate;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -90,6 +102,62 @@ public class ServiceLogActivity extends AppCompatActivity {
         @Override
         public int getItemCount() {
             return logMessages.size();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.service_log_toolbar, menu);
+        return true;
+    }
+
+    public void exportServiceLog() {
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
+        } else {
+            File mainFolder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+            try {
+                File dataFile = new File(mainFolder.getAbsolutePath() + "/Standard Score Service Log " + LocalDate.now().toString() + ".txt");
+
+                if(!dataFile.exists()) {
+                    dataFile.createNewFile();
+                }
+
+                FileWriter writer = new FileWriter(dataFile);
+
+                for(String line : logMessages) {
+                    writer.append(line + "\n");
+                }
+
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            Toast.makeText(this, "Saved in \"Downloads\" folder. Share file with your method of choice", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch(requestCode) {
+            case 0:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    exportServiceLog();
+                }
+                break;
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.action_share_text_file:
+                exportServiceLog();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 }
