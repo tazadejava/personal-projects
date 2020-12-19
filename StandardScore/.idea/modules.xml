@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/StandardScore.iml" filepath="$PROJECT_DIR$/StandardScore.iml" group="StandardScore" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="StandardScore/app" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/StandardScore.iml" filepath="$PROJECT_DIR$/.idea/modules/StandardScore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/StandardScore.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/StandardScore.app.iml" />
     </modules>
   </component>
 </project>

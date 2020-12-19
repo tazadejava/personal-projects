@@ -136,8 +136,11 @@ public class GradesManager {
 
         if (LoginActivity.isUserLoggedIn()) {
             calculateNewestTerm();
+
+            //automatically update after a given amount of time
             if (!isSummer() && !(context instanceof UpdatingService)) {
                 if (getCurrentClassPeriods().isEmpty() || isTimeToUpdate(context) || getLastUpdateMinutesAgo(newestTerm) == -1) {
+                    Toast.makeText(context, getLastUpdateText(newestTerm), Toast.LENGTH_SHORT).show();
                     if (newestTerm == null) {
                         updateGrades(context, UpdateReason.IN_APP_TIME_ELAPSED);
                     } else {
@@ -478,6 +481,7 @@ public class GradesManager {
         web.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
 
         WebSettings settings = web.getSettings();
+
         settings.setJavaScriptEnabled(true);
         settings.setSupportMultipleWindows(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
@@ -801,14 +805,20 @@ public class GradesManager {
                     return;
                 }
 
+                //NOTES ON FILTERGRADES.JS:
+                //this is inefficient but will be revised in a future update
+                //first, find all the rows that exist
+                //then, iterate on that specific row
                 view.evaluateJavascript(filterGrades.replace("SEARCH_ROW", String.valueOf(currentRow)).replace("SEARCH_COLUMN", String.valueOf(currentColumn)),
                         new ValueCallback<String>() {
                             @Override
                             public void onReceiveValue(String value) {
-                                if(value.equals("true")) {
+                                //first clause is if row was not found; second clause is if we iterated all possible rows
+                                if(!value.equals("-1") && !(currentRow != 0 && value.equals("0"))) {
                                     UpdatingService.logMessage("Scraping grades out of row " + currentRow + " column " + currentColumn, lastContext);
                                     scrapeGradeData(view, scrapeGrades, updateTerms);
 
+                                    //update percentage if in current view
                                     if(PeriodListActivity.isRunning && view.getContext() instanceof PeriodListActivity && (isTermUpdating(((PeriodListActivity) view.getContext()).currentViewTerm) || getLastUpdateMinutesAgo(newestTerm) == -1)) {
                                         ((PeriodListActivity) view.getContext()).lastUpdateText.setText(getUpdatePercentage() + "%");
 
@@ -817,11 +827,13 @@ public class GradesManager {
                                         }
                                     }
                                 } else {
+                                    UpdatingService.logMessage("Search did not find clickable term row/col; grade search complete? " + isGradeSearchComplete, lastContext);
                                     updateRowColumns(updateTerms);
 
                                     if(isGradeSearchComplete) {
                                         completeGradeSearch();
                                     } else {
+                                        //update percentage if in current view
                                         if(PeriodListActivity.isRunning && view.getContext() instanceof PeriodListActivity && (isTermUpdating(((PeriodListActivity) view.getContext()).currentViewTerm) || getLastUpdateMinutesAgo(newestTerm) == -1)) {
                                             ((PeriodListActivity) view.getContext()).lastUpdateText.setText(getUpdatePercentage() + "%");
 
@@ -855,7 +867,7 @@ public class GradesManager {
                         "}" +
                         "var table=document.getElementsByClassName('shrinkMe')[0];" +
                         "if('" + lastDialogID + "' === (table.rows[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0].childNodes[0].innerText + table.rows[0].childNodes[0].childNodes[2].childNodes[1].childNodes[0].rows[0].childNodes[0].childNodes[0].data + table.rows[0].childNodes[0].childNodes[2].childNodes[1].childNodes[0].rows[0].childNodes[0].childNodes[2].innerText)) {" +
-                        "return 0;" +
+                        "return -1;" +
                         "}" +
                         "return 1;" +
                         "})()", valueCallback);
@@ -864,7 +876,8 @@ public class GradesManager {
         valueCallback = new ValueCallback<String>() {
             @Override
             public void onReceiveValue(final String value) {
-                if(value.equals("0")) {
+                UpdatingService.logMessage("Received value " + value + " from valueCallback", lastContext);
+                if(value.equals("0") || value.equals("-1")) {
                     handler.postDelayed(run, 500);
                 } else {
 //                    updateRowColumns(updateTerms);
@@ -1488,6 +1501,10 @@ public class GradesManager {
     }
 
     public String getLastUpdateText(ClassPeriod.GradeTerm gradeTerm) {
+        if(gradeTerm == null) {
+            return "Last updated never";
+        }
+
         int minAgo = getLastUpdateMinutesAgo(gradeTerm);
 
         if(minAgo == -1) {

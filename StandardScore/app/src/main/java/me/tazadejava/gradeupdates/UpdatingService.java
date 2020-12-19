@@ -31,6 +31,8 @@ import me.tazadejava.mainscreen.PeriodListActivity;
  */
 public class UpdatingService extends Service {
 
+    private static final boolean DEBUG = true;
+
     private GradesManager manager;
 
     @Override
@@ -94,7 +96,9 @@ public class UpdatingService extends Service {
     }
 
     public static void logMessage(String message, Context context) {
-//        System.out.println(message);
+        if(DEBUG) {
+            System.out.println(message);
+        }
         if(context == null) {
             return;
         }
