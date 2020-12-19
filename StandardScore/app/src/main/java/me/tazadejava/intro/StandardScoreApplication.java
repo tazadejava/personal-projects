@@ -1,14 +1,12 @@
 package me.tazadejava.intro;
 
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 
 import java.lang.ref.WeakReference;
-import java.util.List;
 
 import me.tazadejava.gradeupdates.GradesManager;
 

@@ -2,7 +2,6 @@ package me.tazadejava.gradeupdates;
 
 import android.webkit.JavascriptInterface;
 
-import java.util.Collection;
 import java.util.Set;
 
 import me.tazadejava.classdetails.GradedItem;

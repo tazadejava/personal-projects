@@ -9,7 +9,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.preference.SwitchPreference;
 import android.provider.Settings;
-import android.support.v7.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 
 import me.tazadejava.mainscreen.PeriodListActivity;
 import me.tazadejava.standardscore.R;
@@ -67,7 +67,7 @@ public class SettingsActivity extends Activity implements SharedPreferences.OnSh
                     PeriodListActivity.startBackgroundServices(this);
 
                     if(!Settings.canDrawOverlays(this)) {
-                        android.support.v7.app.AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                        androidx.appcompat.app.AlertDialog.Builder builder = new AlertDialog.Builder(this);
                         builder.setTitle("Grant permission?");
                         builder.setMessage("The app needs the overlay permission to update grades in the background.");
                         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
