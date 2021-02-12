@@ -59,6 +59,8 @@ public class LoginActivity extends AppCompatActivity {
 
     private boolean hasLoggedIn = false, pageFinished = false;
 
+    private long lastDialogTextClickTime;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,6 +101,9 @@ public class LoginActivity extends AppCompatActivity {
                 PreferenceManager.getDefaultSharedPreferences(LoginActivity.this).edit().putBoolean(SettingsActivity.PREF_ENABLE_SERVICE, Settings.canDrawOverlays(this)).apply();
 
                 loadActivity();
+                break;
+            case 1001: //restore from backup
+                PeriodListActivity.restoreFromBackup(this, resultCode, data);
                 break;
             default:
                 super.onActivityResult(requestCode, resultCode, data);
@@ -349,6 +354,33 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        TextView dialogText = view.findViewById(R.id.dialogText);
+
+        dialogText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                lastDialogTextClickTime = System.currentTimeMillis();
+            }
+        });
+
+        //restore from backup option
+        dialogText.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if(System.currentTimeMillis() - lastDialogTextClickTime <= 2000) {
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+
+                    intent.setType("application/zip");
+
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+                    startActivityForResult(intent, 1001);
+                    return true;
+                }
+                return false;
+            }
+        });
+
         username.setText(usernameText);
         final TextView custom = view.findViewById(R.id.customMessage);
         if(customText == null || customText.isEmpty()) {
@@ -400,6 +432,7 @@ public class LoginActivity extends AppCompatActivity {
             }, 300L);
         }
     }
+
 
     private void hideKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);

@@ -1,6 +1,7 @@
 package me.tazadejava.mainscreen;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -12,6 +13,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -35,9 +37,19 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import net.lingala.zip4j.core.ZipFile;
+import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.ZipParameters;
+
+import org.apache.commons.io.FileUtils;
 import org.joda.time.LocalDate;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -473,12 +485,138 @@ public class PeriodListActivity extends AppCompatActivity {
                     getGradesManager().exportDataToDownloads(this);
                 }
                 break;
-            case 1:
+            case 1: //deprecated; should not ask for file permission
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getGradesManager().importDataFromDownloads(this);
+                    androidx.appcompat.app.AlertDialog.Builder confirmSave = new androidx.appcompat.app.AlertDialog.Builder(this);
+
+                    confirmSave.setTitle("Restore your data from an external backup?");
+                    confirmSave.setMessage("You must select a valid .zip file.\nWARNING: All current data will be overridden.");
+
+                    confirmSave.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+
+                            intent.setType("application/zip");
+
+                            intent.addCategory(Intent.CATEGORY_OPENABLE);
+
+                            startActivityForResult(intent, 1001);
+                        }
+                    });
+
+                    confirmSave.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+
+                        }
+                    });
+
+                    confirmSave.show();
                 }
                 break;
         }
+    }
+
+    public static void restoreFromBackup(Activity act, int resultCode, Intent resultData) {
+        if(resultCode == Activity.RESULT_OK) {
+            Uri uri = null;
+            if (resultData != null) {
+                uri = resultData.getData();
+
+                final File destinationFile = new File(act.getFilesDir().getParentFile().getAbsolutePath() + "/output.zip");
+
+                try {
+                    BufferedInputStream bis = new BufferedInputStream(act.getContentResolver().openInputStream(uri));
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(destinationFile, false));
+
+                    byte[] buffer = new byte[1024];
+
+                    bis.read(buffer);
+
+                    do {
+                        bos.write(buffer);
+                    } while(bis.read(buffer) != -1);
+
+                    bis.close();
+                    bos.close();
+
+                    try {
+                        final File targetDirectory = new File(act.getFilesDir().getParent());
+                        File oldFilesDirectory = new File(act.getFilesDir().getAbsolutePath());
+
+                        //delete old data folder
+
+                        if(oldFilesDirectory.exists()) {
+                            FileUtils.deleteDirectory(oldFilesDirectory);
+                        }
+
+                        Toast.makeText(act, "Importing data...", Toast.LENGTH_SHORT).show();
+
+                        //replace with new files
+
+                        new Handler().postDelayed(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    ZipFile zippedFile = new ZipFile(destinationFile);
+                                    zippedFile.setPassword("dj#901ejnc91n$ccmr...o!");
+                                    zippedFile.extractAll(targetDirectory.getAbsolutePath());
+
+                                    Intent intent = new Intent(act, LoginActivity.class);
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                    act.startActivity(intent);
+                                    System.exit(1);
+                                } catch (ZipException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }, 100L);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent resultData) {
+        switch(requestCode) {
+            case 1001: //backup
+                restoreFromBackup(this, resultCode, resultData);
+                break;
+            case 2001: //save zip, now delete it
+                File mainFolder = new File(getFilesDir().getAbsolutePath() + "/");
+
+                for(File file : mainFolder.listFiles()) {
+                    if(!file.isDirectory()) {
+                        if(file.getName().startsWith("standard-score-backup") && file.getName().endsWith(".zip")) {
+                            file.delete();
+                        }
+                    }
+                }
+                break;
+            default:
+                super.onActivityResult(requestCode, resultCode, resultData);
+                break;
+        }
+    }
+
+    public static void deleteDirectory(File file) {
+        File[] contents = file.listFiles();
+
+        if(contents != null) {
+            for(File loopFile : contents) {
+                if(!Files.isSymbolicLink(loopFile.toPath())) {
+                    deleteDirectory(loopFile);
+                }
+            }
+        }
+
+        file.delete();
     }
 
     public static void startBackgroundServices(Context context) {

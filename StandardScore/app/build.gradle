@@ -2,13 +2,13 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "29.0.2"
+    buildToolsVersion "30.0.2"
     defaultConfig {
         applicationId "me.tazadejava.standardscore"
-        minSdkVersion 23
+        minSdkVersion 26
         targetSdkVersion 30
-        versionCode 54
-        versionName "2.14"
+        versionCode 56
+        versionName "2.14.2"
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     buildTypes {
@@ -16,6 +16,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
     }
     lintOptions {
         abortOnError false

@@ -131,8 +131,8 @@ public abstract class SecretGestureListener implements View.OnTouchListener {
                         viewServiceLog();
                     }
                     break;
-                case 12:
-                    key = new Gesture[] {Gesture.CLICK, Gesture.CLICK, Gesture.UP, Gesture.CLICK, Gesture.CLICK, Gesture.RIGHT, Gesture.CLICK, Gesture.CLICK, Gesture.DOWN, Gesture.CLICK, Gesture.CLICK, Gesture.LEFT};
+                case 3:
+                    key = new Gesture[] {Gesture.CLICK, Gesture.CLICK, Gesture.UP};
                     if(Arrays.equals(previousGestures.toArray(new Gesture[0]), key)) {
                         viewDataTransferDialog();
                     }

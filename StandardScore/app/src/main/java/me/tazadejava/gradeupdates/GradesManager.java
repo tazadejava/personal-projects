@@ -27,6 +27,8 @@ import android.provider.Settings;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.FileProvider;
+
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,6 +58,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -325,8 +329,9 @@ public class GradesManager {
                 }
 
                 try {
+                    File historyDataTempFile = new File(saveFilePath + "/history_temp.txt");
                     File historyDataFile = new File(saveFilePath + "/history.txt");
-                    writer = new FileWriter(historyDataFile, false);
+                    writer = new FileWriter(historyDataTempFile, false);
 
                     for(Map.Entry<DateTime, List<UpdateHistoryPoint>> entry : updateHistory.entrySet()) {
                         if(entry.getKey().plusMonths(3).isBeforeNow()) {
@@ -347,6 +352,12 @@ public class GradesManager {
                     }
 
                     writer.close();
+
+                    boolean overwritten = historyDataTempFile.renameTo(historyDataFile);
+
+                    if(!overwritten) {
+                        UpdatingService.logMessage("The history temp file overwriting process failed", lastContext);
+                    }
                 } catch(IOException ex) {
                     ex.printStackTrace();
                 }
@@ -827,7 +838,7 @@ public class GradesManager {
                                         }
                                     }
                                 } else {
-                                    UpdatingService.logMessage("Search did not find clickable term row/col; grade search complete? " + isGradeSearchComplete, lastContext);
+                                    UpdatingService.logMessage("Search did not find clickable term row/col (" + currentRow + ", " + currentColumn + "); grade search complete? " + isGradeSearchComplete, lastContext);
                                     updateRowColumns(updateTerms);
 
                                     if(isGradeSearchComplete) {
@@ -861,6 +872,7 @@ public class GradesManager {
                     return;
                 }
 
+                //scrape the data on the class
                 view.evaluateJavascript("javascript:(function(){" +
                         "if(document.getElementsByClassName('shrinkMe').length == 0) {" +
                         "return 0;" +
@@ -1786,135 +1798,71 @@ public class GradesManager {
 
     public void exportDataToDownloads(final Activity act) {
         /*
-        if permission to access files not granted, ask for it now.
-        otherwise, access internal storage main folder, create a folder named "Standard Score Data", and store everything in an "encrypted?" folder?
-            everything: ALL the files in the files folder, like an overwrite
-
+        Store in a file to the user's choosing location
          */
 
-        if(ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(act, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
-        } else {
-            File mainFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Standard Score Exported Data");
-            if(!mainFolder.exists()) {
-                mainFolder.mkdirs();
-            }
+        final File backupFolder = new File(act.getFilesDir().getAbsolutePath());
 
-            try {
-                LocalDate now = LocalDate.now();
-                final File stampedFolder = new File(mainFolder.getAbsolutePath() + "/" + now.toString());
-                if(stampedFolder.exists()) {
-                    FileUtils.deleteDirectory(stampedFolder);
+        try {
+            //backup to a zip file
+            final String fileName = "standard-score-backup-" + LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME).replace(":", "-").replace(".", "-") + ".zip";
+            final ZipFile zipFile = new ZipFile(act.getFilesDir().getParentFile().getAbsolutePath() + "/" + fileName);
+            ZipParameters parameters = new ZipParameters();
+            parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
+            parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_ULTRA);
+            parameters.setEncryptFiles(true);
+            parameters.setEncryptionMethod(Zip4jConstants.ENC_METHOD_AES);
+            parameters.setAesKeyStrength(Zip4jConstants.AES_STRENGTH_256);
+            parameters.setPassword("dj#901ejnc91n$ccmr...o!");
+
+            zipFile.addFolder(backupFolder, parameters);
+
+            //allow user to decide where to store the zip file
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    Intent shareFile = new Intent(Intent.ACTION_SEND);
+
+                    shareFile.setType("application/zip");
+                    shareFile.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(act, "me.tazadejava.standardscore.provider", zipFile.getFile()));
+                    shareFile.putExtra(Intent.EXTRA_SUBJECT, fileName);
+                    shareFile.putExtra(Intent.EXTRA_TEXT, fileName);
+
+                    act.startActivityForResult(Intent.createChooser(shareFile, "Upload backup file"), 2001);
                 }
-                stampedFolder.mkdirs();
-
-                final File sourceDirectory = new File(act.getFilesDir().getAbsolutePath());
-
-                Toast.makeText(act, "Exporting, please wait...", Toast.LENGTH_SHORT).show();
-
-                new Handler().postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            ZipFile zipFile = new ZipFile(stampedFolder.getAbsolutePath() + "/files.zip");
-                            ZipParameters parameters = new ZipParameters();
-                            parameters.setCompressionMethod(Zip4jConstants.COMP_DEFLATE);
-                            parameters.setCompressionLevel(Zip4jConstants.DEFLATE_LEVEL_ULTRA);
-                            parameters.setEncryptFiles(true);
-                            parameters.setEncryptionMethod(Zip4jConstants.ENC_METHOD_AES);
-                            parameters.setAesKeyStrength(Zip4jConstants.AES_STRENGTH_256);
-                            parameters.setPassword("dj#901ejnc91n$ccmr...o!");
-
-                            zipFile.addFolder(sourceDirectory, parameters);
-
-                            Toast.makeText(act, "Done!", Toast.LENGTH_SHORT).show();
-                        } catch (ZipException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, 100L);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            }, 500L);
+        } catch (ZipException e) {
+            e.printStackTrace();
         }
     }
 
     public void importDataFromDownloads(final Activity act) {
-        /*
-        To access the data: ask for permission first to access files, then:
-        check if the folder exists, then if a file exists. if so, load it, decrypting it if necessary
+        androidx.appcompat.app.AlertDialog.Builder confirmSave = new androidx.appcompat.app.AlertDialog.Builder(act);
 
-        THEN, refresh the entire app somehow? force close and restart, maybe like a crash log?
+        confirmSave.setTitle("Restore your data from an external backup?");
+        confirmSave.setMessage("You must select a valid .zip file.\nWARNING: All current data will be overridden.");
 
-         */
+        confirmSave.setPositiveButton("YES", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
 
-        if(ContextCompat.checkSelfPermission(act, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(act, new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-        } else {
-            File mainFolder = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Standard Score Exported Data");
-            if(mainFolder.exists()) {
-                if(mainFolder.listFiles().length > 0) {
-                    File sourceFile = null;
+                intent.setType("application/zip");
 
-                    for(File file : mainFolder.listFiles()) {
-                        if(file.isDirectory()) {
-                            File[] files = file.listFiles();
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
 
-                            if(files.length == 1 && files[0].getName().equals("files.zip")) {
-                                sourceFile = file;
-                                break;
-                            }
-                        }
-                    }
-
-                    if(sourceFile != null) {
-                        AlertDialog.Builder overwriteWarning = new AlertDialog.Builder(act);
-                        overwriteWarning.setTitle("Overwrite all current data?");
-                        overwriteWarning.setMessage("Export date: " + sourceFile.getName());
-
-                        final File finalSourceFile = sourceFile;
-                        overwriteWarning.setPositiveButton("DO IT", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                try {
-                                    final File targetDirectory = new File(act.getFilesDir().getParent());
-                                    File oldFilesDirectory = new File(act.getFilesDir().getAbsolutePath());
-
-                                    if(oldFilesDirectory.exists()) {
-                                        FileUtils.deleteDirectory(oldFilesDirectory);
-                                    }
-
-                                    Toast.makeText(act, "Importing data...", Toast.LENGTH_SHORT).show();
-
-                                    new Handler().postDelayed(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            try {
-                                                ZipFile zippedFile = new ZipFile(finalSourceFile.listFiles()[0]);
-                                                zippedFile.setPassword("dj#901ejnc91n$ccmr...o!");
-                                                zippedFile.extractAll(targetDirectory.getAbsolutePath());
-
-                                                Intent intent = new Intent(act, LoginActivity.class);
-                                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                                act.startActivity(intent);
-                                                System.exit(1);
-                                            } catch (ZipException e) {
-                                                e.printStackTrace();
-                                            }
-                                        }
-                                    }, 100L);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        });
-                        overwriteWarning.setNegativeButton("NO!", null);
-
-                        overwriteWarning.show();
-                    }
-                }
+                act.startActivityForResult(intent, 1001);
             }
-        }
+        });
+
+        confirmSave.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        });
+
+        confirmSave.show();
     }
 
     public static String getSchoolYear() {
